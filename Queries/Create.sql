@@ -1,15 +1,15 @@
-CREATE TABLE cm_branch (
+CREATE TABLE IF NOT EXISTS cm_branch (
     branch_id VARCHAR(4) NOT NULL PRIMARY KEY,
     address VARCHAR(60) NOT NULL,
     contact_number VARCHAR(12) NOT NULL,
     manager_id INTEGER NOT NULL
 );
-CREATE TABLE cm_menu (
+CREATE TABLE IF NOT EXISTS cm_menu (
     item_id VARCHAR(4) NOT NULL PRIMARY KEY,
     item_name VARCHAR(30) NOT NULL,
     price NUMERIC(6, 0) NOT NULL
 );
-CREATE TABLE cm_job 
+CREATE TABLE IF NOT EXISTS cm_job 
 (
     job_id VARCHAR(4) NOT NULL PRIMARY KEY,
     job_title VARCHAR(10) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE cm_job
     fixed_salary NUMERIC(8,0)  NULL
 );
 
-CREATE TABLE cm_staff 
+CREATE TABLE IF NOT EXISTS cm_staff 
 (
     staff_id SERIAL PRIMARY KEY,
     job_id VARCHAR(4) NOT NULL, 
@@ -38,7 +38,7 @@ CREATE TABLE cm_staff
     CHECK (status = 'part time' or status = 'full time')
 );
 
-CREATE TABLE cm_customer
+CREATE TABLE IF NOT EXISTS cm_customer
 (
     customer_id SERIAL NOT NULL PRIMARY KEY,
     customer_name VARCHAR(40) NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE cm_customer
 );
 
 
-CREATE TABLE cm_order 
+CREATE TABLE IF NOT EXISTS cm_order 
 (
     order_id VARCHAR (10) NOT NULL PRIMARY KEY, 
     staff_id INTEGER,
@@ -66,7 +66,7 @@ CREATE TABLE cm_order
     
 );
 
-CREATE TABLE cm_order_item
+CREATE TABLE IF NOT EXISTS cm_order_item
 (
     order_id VARCHAR (10) NOT NULL, 
     item_id VARCHAR (4) NOT NULL,
