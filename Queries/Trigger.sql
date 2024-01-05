@@ -66,7 +66,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_large_order_discount
 BEFORE INSERT OR UPDATE ON cm_order
 FOR EACH ROW EXECUTE FUNCTION apply_large_order_discount();
-
 --test
 
 --5. trigger cascade Delete for Order Items
