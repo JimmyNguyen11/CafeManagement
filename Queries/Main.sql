@@ -1,4 +1,4 @@
---1. CREATE DATABASE
+-- Create table
 CREATE TABLE IF NOT EXISTS cm_branch (
     branch_id VARCHAR(4) NOT NULL PRIMARY KEY,
     address VARCHAR(60) NOT NULL,
@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS cm_staff
         FOREIGN KEY (branch_id) REFERENCES cm_branch(branch_id),
     CONSTRAINT staff_job_job_id 
         FOREIGN KEY (job_id) REFERENCES cm_job(job_id),
-    CHECK (status = 'part time' or status = 'full time')
-);
+    CHECK (status = 'part time' or status = 'full time' or status = 'inactive')
+);                   
 
 CREATE TABLE IF NOT EXISTS cm_customer
 (
@@ -75,11 +75,10 @@ CREATE TABLE IF NOT EXISTS cm_order_item
     price NUMERIC(6, 0) NOT NULL,
     PRIMARY KEY (order_id, item_id),
     CONSTRAINT orditm_item_item_id
-        FOREIGN KEY (item_id) REFERENCES cm_menu(item_id),
+        FOREIGN KEY (item_id) REFERENCES cm_menu(item_id) ON DELETE CASCADE,
     CONSTRAINT orditm_order_order_id
-        FOREIGN KEY (order_id) REFERENCES cm_order(order_id)
+        FOREIGN KEY (order_id) REFERENCES cm_order(order_id) ON DELETE CASCADE
 );
-
 --2. CREATE VIEW
 --1. View of All Branches and Their Managers
 CREATE OR REPLACE VIEW BranchManagers AS
@@ -176,16 +175,29 @@ ORDER BY c.customer_id, o.date_order DESC;
 
 --3. FUNCTIONS
 -- getShipfee
-CREATE FUNCTION GETSHIPFEE(in ORDER_ID VARCHAR(4)) 
+DROP FUNCTION IF EXISTS GETSHIPFEE;
+CREATE OR REPLACE FUNCTION GETSHIPFEE(test_order_id VARCHAR(10)) 
 RETURNS INTEGER 
 AS $$  
+DECLARE
+    ship_fee INTEGER;
 BEGIN
-SELECT distance*5000 FROM cm_order 
-WHERE order_id = cm_order.order_id ;
+    SELECT distance * 5000 INTO ship_fee
+    FROM cm_order 
+    WHERE order_id = test_order_id;
+    IF NOT FOUND THEN
+        RETURN NULL;  
+    END IF;
+
+    RETURN ship_fee;
 END;
 $$ LANGUAGE PLPGSQL;
+--test 
+--select GETSHIPFEE('OD10') as ship_fee;
+--select GETSHIPFEE('ko') as ship_fee;
 
 --getPayhmentByOd
+DROP FUNCTION IF EXISTS GETPAYMENT;
 CREATE OR REPLACE FUNCTION GETPAYMENT(A VARCHAR(4))
 RETURNS INTEGER AS $$
 DECLARE
@@ -233,6 +245,7 @@ WHERE RN = 1;
 */
 
 --getMostEfficientBranch
+DROP FUNCTION IF EXISTS getmostefficientbranch;
 CREATE OR REPLACE FUNCTION getmostefficientbranch()
 RETURNS VARCHAR(4) AS $$
 DECLARE
@@ -256,8 +269,11 @@ BEGIN
     RETURN best_branch_id;
 END;
 $$ LANGUAGE plpgsql;
+--test
+--select getmostefficientbranch() as ok;
 
 --get daily income function
+DROP FUNCTION IF EXISTS get_daily_income;
 CREATE OR REPLACE FUNCTION get_daily_income(d DATE)
 RETURNS TABLE(id VARCHAR(4), address VARCHAR(60), date DATE, income NUMERIC(11,0))
 AS $$
@@ -275,6 +291,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --get information of a bill
+DROP FUNCTION IF EXISTS get_bill_from_order_id;
 CREATE OR REPLACE FUNCTION get_bill_from_order_id(id VARCHAR(10))
 RETURNS TABLE(
     staff_id INTEGER,
@@ -312,6 +329,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --get the loyal customer
+DROP FUNCTION IF EXISTS get_loyal_customer;
 CREATE OR REPLACE FUNCTION get_loyal_customer(p NUMERIC(10,0))
 RETURNS TABLE(id INTEGER, name VARCHAR(40), pay NUMERIC(10,0))
  AS $$
@@ -330,6 +348,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --find most/least favorited product
+DROP FUNCTION IF EXISTS get_least_favourite_item;
 CREATE OR REPLACE FUNCTION get_least_favourite_item()
 RETURNS VARCHAR(4)
  AS $$
@@ -353,6 +372,7 @@ select * from get_least_favourite_item(10);
 */
 
 --find n least favorited product
+DROP FUNCTION IF EXISTS get_least_favourite_item;
 CREATE OR REPLACE FUNCTION get_least_favourite_item(n INT)
 RETURNS TABLE (name VARCHAR(30), quantity BIGINT)
  AS $$
@@ -368,6 +388,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --find n most favorited product
+DROP FUNCTION IF EXISTS get_favourite_item;
 CREATE OR REPLACE FUNCTION get_favourite_item(n INT)
 RETURNS TABLE (name VARCHAR(30), quantity BIGINT)
  AS $$
@@ -381,11 +402,12 @@ BEGIN
     LIMIT n;
 END;
 $$ LANGUAGE plpgsql;
-/* Top n m�n ???c y�u th�ch nh?t
-select * from get_favourite_item(10);
-*/
+--test
+--select * from get_favourite_item(10);
+
 
 --calculate the salary
+DROP FUNCTION IF EXISTS get_salary;
 CREATE OR REPLACE FUNCTION get_salary(sta_id INT)
 RETURNS NUMERIC
 AS $$
@@ -404,11 +426,12 @@ BEGIN
     RETURN salary;
 END;
 $$ LANGUAGE plpgsql ;
-/* L??ng c?a nh�n vi�n c� ID l� 1023
-select get_salary(1023);
-*/
+--test
+--select get_salary(1023);
+
 
 --suggestItem
+DROP FUNCTION IF EXISTS SUGGEST_ITEM;
 CREATE OR REPLACE FUNCTION SUGGEST_ITEM(CUS_ID INT) 
 RETURNS VARCHAR(4) 
  AS $$
@@ -427,6 +450,261 @@ BEGIN
 END;
 $$ LANGUAGE PLPGSQL;
 
+-- Insert branch
+DROP FUNCTION IF EXISTS insert_branch_info;
+CREATE OR REPLACE FUNCTION insert_branch_info(p_branch_id text, p_address text, p_contact_num text, p_manager_id int)
+RETURNS void AS $$
+BEGIN
+    IF NOT EXISTS (SELECT branch_id FROM cm_branch WHERE branch_id = p_branch_id) THEN
+        INSERT INTO cm_branch VALUES (p_branch_id, p_address, p_contact_num, p_manager_id);
+        RAISE NOTICE 'Insert success';
+    ELSE
+        RAISE NOTICE 'Duplicate data';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
+--  Insert job
+DROP FUNCTION IF EXISTS insert_job_info;
+CREATE OR REPLACE FUNCTION insert_job_info(p_job_id text, p_job_title text, p_salary_per_hour numeric, p_fixed_salary numeric)
+RETURNS void AS $$
+BEGIN
+    IF NOT EXISTS (SELECT job_id FROM cm_job WHERE job_id = p_job_id) THEN
+        INSERT INTO cm_job VALUES (p_job_id, p_job_title, p_salary_per_hour, p_fixed_salary);
+        RAISE NOTICE 'Insert success';
+    ELSE
+        RAISE NOTICE 'Duplicate data';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
+-- Insert menu
+DROP FUNCTION IF EXISTS insert_menu_info;
+CREATE OR REPLACE FUNCTION insert_menu_info(p_item_id text, p_item_name text, p_price numeric)
+RETURNS void AS $$
+BEGIN
+    IF NOT EXISTS (SELECT item_id FROM cm_menu WHERE item_id = p_item_id) THEN
+        INSERT INTO cm_menu VALUES (p_item_id, p_item_name, p_price);
+        RAISE NOTICE 'Insert success';
+    ELSE
+        RAISE NOTICE 'Duplicate data';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
+-- Insert customer
+DROP FUNCTION IF EXISTS insert_customer_info;
+CREATE OR REPLACE FUNCTION insert_customer_info(p_customer_name text, p_address text, p_contact_num text, p_gender text)
+RETURNS void AS $$
+DECLARE
+    p_id int;
+BEGIN
+    SELECT MAX(customer_id) INTO p_id FROM cm_customer; 
+    IF NOT EXISTS (SELECT 1 FROM cm_customer WHERE customer_name = p_customer_name AND address = p_address) THEN
+        INSERT INTO cm_customer VALUES (p_id + 1, p_customer_name, p_address, p_contact_num, LOWER(p_gender));
+        RAISE NOTICE 'Insert success';
+    ELSE
+        RAISE NOTICE 'Duplicate data';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Insert staff
+DROP FUNCTION IF EXISTS insert_staff_info;
+CREATE OR REPLACE FUNCTION insert_staff_info(
+    p_job_id text,
+    p_first_name text,
+    p_last_name text,
+    p_date_of_birth date,
+    p_contact_number text,
+    p_hometown text,
+    p_branch_id text,
+    p_hire_date date,
+    p_work_hour int,
+    p_status text
+)
+RETURNS void AS $$
+DECLARE
+    p_id int;
+BEGIN
+    SELECT MAX(staff_id) INTO p_id FROM cm_staff; 
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM cm_staff 
+        WHERE first_name = p_first_name 
+          AND last_name = p_last_name 
+          AND date_of_birth = p_date_of_birth 
+          AND contact_number = p_contact_number
+    ) THEN
+        INSERT INTO cm_staff VALUES (
+            p_id + 1,
+            UPPER(p_job_id),
+            p_first_name,
+            p_last_name,
+            p_date_of_birth,
+            p_contact_number,
+            p_hometown,
+            UPPER(p_branch_id),
+            p_hire_date,
+            p_work_hour,
+            LOWER(p_status)
+        );
+        RAISE NOTICE 'Insert success';
+    ELSE
+        RAISE NOTICE 'Duplicate data';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Insert order
+DROP FUNCTION IF EXISTS insert_order_info;
+CREATE OR REPLACE FUNCTION insert_order_info(
+	p_order_id text,
+    p_staff_id text,
+    p_distance numeric,
+    p_status text,
+    p_discount numeric,
+    p_date_order date,
+    p_customer_id int
+)
+RETURNS void AS $$
+BEGIN
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM cm_order
+        WHERE order_id = p_order_id
+    ) THEN
+        INSERT INTO cm_order VALUES (
+            p_order_id,
+            p_staff_id,
+            p_distance,
+            p_status,
+            p_discount,
+            p_date_order,
+            p_customer_id
+        );
+        RAISE NOTICE 'Insert success';
+    ELSE
+        RAISE NOTICE 'Duplicate data';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Insert order item
+DROP FUNCTION IF EXISTS insert_order_item_info;
+CREATE OR REPLACE FUNCTION insert_order_item_info(
+    p_order_id text,
+    p_item_id text,
+    p_quantity int,
+    p_price numeric
+)
+RETURNS void AS $$
+BEGIN
+    INSERT INTO cm_order_item VALUES (p_order_id, p_item_id, p_quantity, p_price);
+    RAISE NOTICE 'Insert success';
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to delete an order
+CREATE OR REPLACE FUNCTION delete_order(order_id_to_delete VARCHAR(10))
+RETURNS VOID AS
+$$
+BEGIN
+    DELETE FROM cm_order
+    WHERE order_id = order_id_to_delete;
+END;
+$$
+LANGUAGE plpgsql;
+
+-- Function to delete an order_item
+CREATE OR REPLACE FUNCTION delete_order_item(order_id_to_delete VARCHAR(10), item_id_to_delete VARCHAR(4))
+RETURNS VOID AS
+$$
+BEGIN
+    DELETE FROM cm_order_item
+    WHERE order_id = order_id_to_delete AND item_id = item_id_to_delete;
+END;
+$$
+LANGUAGE plpgsql;
+
+-- Funstion to set a staff to inactive
+CREATE OR REPLACE FUNCTION set_staff_to_inactive(staff_id_to_inactive INT)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE cm_staff
+    SET status = 'inactive'
+    WHERE staff_id = staff_id_to_inactive;
+END;
+$$ LANGUAGE plpgsql;
+
+--2. Trigger to prevent deleting a job associated with a existence staff
+--trigger function
+CREATE OR REPLACE FUNCTION prevent_delete_job()
+RETURNS TRIGGER AS $$
+DECLARE
+    job_count INT;
+BEGIN
+    SELECT COUNT(*) INTO job_count FROM cm_staff WHERE job_id = OLD.job_id;
+
+    IF job_count > 0 THEN
+        RAISE EXCEPTION 'Cannot delete job record with job_id %; it is associated with existing staff members.', OLD.job_id;
+    END IF;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Attach Trigger
+CREATE TRIGGER trigger_prevent_delete_job
+BEFORE DELETE ON cm_job
+FOR EACH ROW EXECUTE FUNCTION prevent_delete_job();
+--test
+
+--3. Trigger validate new staff age
+--trigger function
+CREATE OR REPLACE FUNCTION validate_staff_age()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.date_of_birth > CURRENT_DATE - INTERVAL '18 years') THEN
+        RAISE EXCEPTION 'Staff must be at least 18 years old.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+--attach trigger
+CREATE TRIGGER trigger_validate_staff_age
+BEFORE INSERT ON cm_staff
+FOR EACH ROW EXECUTE FUNCTION validate_staff_age();
+--test
+
+--4. trigger automatically set discount for returning customer
+--trigger function
+CREATE OR REPLACE FUNCTION apply_returning_discount()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.discount >= 0 AND EXISTS (
+        SELECT 1
+        FROM cm_order
+        WHERE customer_id = NEW.customer_id 
+		AND order_id <> NEW.order_id 
+		AND date_order <> NEW.date_order
+    ) THEN
+        NEW.discount := COALESCE((SELECT MAX(discount) + 3 + NEW.discount FROM cm_order WHERE customer_id = NEW.customer_id), 3);
+    END IF;
+	IF NEW.discount >= 15 THEN
+		NEW.discount := 15;
+	END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Attach trigger
+CREATE TRIGGER trigger_returning_customer_discount
+BEFORE INSERT OR UPDATE ON cm_order
+FOR EACH ROW EXECUTE FUNCTION apply_returning_discount();
+--test
+
+-- trigger 5 and 1 will be added later.

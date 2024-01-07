@@ -105,5 +105,3 @@ JOIN cm_order o ON c.customer_id = o.customer_id
 ORDER BY c.customer_id, o.date_order DESC;
 --test
 --select * from CustomerOrderHistory;
-
-

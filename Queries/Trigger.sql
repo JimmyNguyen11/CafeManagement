@@ -63,7 +63,7 @@ FOR EACH ROW EXECUTE FUNCTION validate_staff_age();
 CREATE OR REPLACE FUNCTION apply_returning_discount()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.discount >= 0 AND EXISTS (
+    IF EXISTS (
         SELECT 1
         FROM cm_order
         WHERE customer_id = NEW.customer_id 
@@ -84,21 +84,3 @@ CREATE TRIGGER trigger_returning_customer_discount
 BEFORE INSERT OR UPDATE ON cm_order
 FOR EACH ROW EXECUTE FUNCTION apply_returning_discount();
 --test
-
---5. Trigger to validate_taken_staff for the order
---trigger function
-CREATE OR REPLACE FUNCTION validate_taken_staff()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NOT EXISTS (SELECT * FROM cm_staff WHERE staff_id = NEW.staff_id AND status = 'inactive') THEN
-        PERFORM insert_order_info(new.order_id, new.staff_id, new.distance, new.status, new.discount, new.date_order, new.customer_id);
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
---attach trigger
-CREATE TRIGGER trigger_validate_taken_staff
-BEFORE INSERT OR UPDATE ON cm_order
-FOR EACH ROW EXECUTE FUNCTION validate_taken_staff();

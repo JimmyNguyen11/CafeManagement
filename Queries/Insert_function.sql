@@ -109,7 +109,7 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS insert_order_info;
 CREATE OR REPLACE FUNCTION insert_order_info(
 	p_order_id text,
-    p_staff_id text,
+    p_staff_id int,
     p_distance numeric,
     p_status text,
     p_discount numeric,
