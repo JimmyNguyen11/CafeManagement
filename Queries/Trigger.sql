@@ -63,14 +63,14 @@ FOR EACH ROW EXECUTE FUNCTION validate_staff_age();
 CREATE OR REPLACE FUNCTION apply_returning_discount()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.discount = 0 AND EXISTS (
+    IF NEW.discount >= 0 AND EXISTS (
         SELECT 1
         FROM cm_order
         WHERE customer_id = NEW.customer_id 
 		AND order_id <> NEW.order_id 
 		AND date_order <> NEW.date_order
     ) THEN
-        NEW.discount := COALESCE((SELECT MAX(discount) + 5 FROM cm_order WHERE customer_id = NEW.customer_id), 5);
+        NEW.discount := COALESCE((SELECT MAX(discount) + 3 + NEW.discount FROM cm_order WHERE customer_id = NEW.customer_id), 3);
     END IF;
 	IF NEW.discount >= 15 THEN
 		NEW.discount := 15;
