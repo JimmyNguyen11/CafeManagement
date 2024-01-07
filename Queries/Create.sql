@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS cm_staff
         FOREIGN KEY (branch_id) REFERENCES cm_branch(branch_id),
     CONSTRAINT staff_job_job_id 
         FOREIGN KEY (job_id) REFERENCES cm_job(job_id),
-    CHECK (status = 'part time' or status = 'full time')
-);
+    CHECK (status = 'part time' or status = 'full time' or status = 'inactive')
+);                   
 
 CREATE TABLE IF NOT EXISTS cm_customer
 (
@@ -74,9 +74,7 @@ CREATE TABLE IF NOT EXISTS cm_order_item
     price NUMERIC(6, 0) NOT NULL,
     PRIMARY KEY (order_id, item_id),
     CONSTRAINT orditm_item_item_id
-        FOREIGN KEY (item_id) REFERENCES cm_menu(item_id),
+        FOREIGN KEY (item_id) REFERENCES cm_menu(item_id) ON DELETE CASCADE,
     CONSTRAINT orditm_order_order_id
-        FOREIGN KEY (order_id) REFERENCES cm_order(order_id)
+        FOREIGN KEY (order_id) REFERENCES cm_order(order_id) ON DELETE CASCADE
 );
-
-
