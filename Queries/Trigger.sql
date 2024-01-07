@@ -63,7 +63,7 @@ FOR EACH ROW EXECUTE FUNCTION validate_staff_age();
 CREATE OR REPLACE FUNCTION apply_returning_discount()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF EXISTS (
+    IF NEW.discount >= 0 EXISTS (
         SELECT 1
         FROM cm_order
         WHERE customer_id = NEW.customer_id 
