@@ -1,14 +1,27 @@
 -- getShipfee
-CREATE FUNCTION GETSHIPFEE(in ORDER_ID VARCHAR(4)) 
+DROP FUNCTION IF EXISTS GETSHIPFEE;
+CREATE OR REPLACE FUNCTION GETSHIPFEE(test_order_id VARCHAR(10)) 
 RETURNS INTEGER 
 AS $$  
+DECLARE
+    ship_fee INTEGER;
 BEGIN
-SELECT distance*5000 FROM cm_order 
-WHERE order_id = cm_order.order_id ;
+    SELECT distance * 5000 INTO ship_fee
+    FROM cm_order 
+    WHERE order_id = test_order_id;
+    IF NOT FOUND THEN
+        RETURN NULL;  
+    END IF;
+
+    RETURN ship_fee;
 END;
 $$ LANGUAGE PLPGSQL;
+--test 
+--select GETSHIPFEE('OD10') as ship_fee;
+--select GETSHIPFEE('ko') as ship_fee;
 
 --getPayhmentByOd
+DROP FUNCTION IF EXISTS GETPAYMENT;
 CREATE OR REPLACE FUNCTION GETPAYMENT(A VARCHAR(4))
 RETURNS INTEGER AS $$
 DECLARE
@@ -56,6 +69,7 @@ WHERE RN = 1;
 */
 
 --getMostEfficientBranch
+DROP FUNCTION IF EXISTS getmostefficientbranch;
 CREATE OR REPLACE FUNCTION getmostefficientbranch()
 RETURNS VARCHAR(4) AS $$
 DECLARE
@@ -79,8 +93,11 @@ BEGIN
     RETURN best_branch_id;
 END;
 $$ LANGUAGE plpgsql;
+--test
+--select getmostefficientbranch() as ok;
 
 --get daily income function
+DROP FUNCTION IF EXISTS get_daily_income;
 CREATE OR REPLACE FUNCTION get_daily_income(d DATE)
 RETURNS TABLE(id VARCHAR(4), address VARCHAR(60), date DATE, income NUMERIC(11,0))
 AS $$
@@ -98,6 +115,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --get information of a bill
+DROP FUNCTION IF EXISTS get_bill_from_order_id;
 CREATE OR REPLACE FUNCTION get_bill_from_order_id(id VARCHAR(10))
 RETURNS TABLE(
     staff_id INTEGER,
@@ -135,6 +153,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --get the loyal customer
+DROP FUNCTION IF EXISTS get_loyal_customer;
 CREATE OR REPLACE FUNCTION get_loyal_customer(p NUMERIC(10,0))
 RETURNS TABLE(id INTEGER, name VARCHAR(40), pay NUMERIC(10,0))
  AS $$
@@ -153,6 +172,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --find most/least favorited product
+DROP FUNCTION IF EXISTS get_least_favourite_item;
 CREATE OR REPLACE FUNCTION get_least_favourite_item()
 RETURNS VARCHAR(4)
  AS $$
@@ -176,6 +196,7 @@ select * from get_least_favourite_item(10);
 */
 
 --find n least favorited product
+DROP FUNCTION IF EXISTS get_least_favourite_item;
 CREATE OR REPLACE FUNCTION get_least_favourite_item(n INT)
 RETURNS TABLE (name VARCHAR(30), quantity BIGINT)
  AS $$
@@ -191,6 +212,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --find n most favorited product
+DROP FUNCTION IF EXISTS get_favourite_item;
 CREATE OR REPLACE FUNCTION get_favourite_item(n INT)
 RETURNS TABLE (name VARCHAR(30), quantity BIGINT)
  AS $$
@@ -204,11 +226,12 @@ BEGIN
     LIMIT n;
 END;
 $$ LANGUAGE plpgsql;
-/* Top n m�n ???c y�u th�ch nh?t
-select * from get_favourite_item(10);
-*/
+--test
+--select * from get_favourite_item(10);
+
 
 --calculate the salary
+DROP FUNCTION IF EXISTS get_salary;
 CREATE OR REPLACE FUNCTION get_salary(sta_id INT)
 RETURNS NUMERIC
 AS $$
@@ -227,11 +250,12 @@ BEGIN
     RETURN salary;
 END;
 $$ LANGUAGE plpgsql ;
-/* L??ng c?a nh�n vi�n c� ID l� 1023
-select get_salary(1023);
-*/
+--test
+--select get_salary(1023);
+
 
 --suggestItem
+DROP FUNCTION IF EXISTS SUGGEST_ITEM;
 CREATE OR REPLACE FUNCTION SUGGEST_ITEM(CUS_ID INT) 
 RETURNS VARCHAR(4) 
  AS $$

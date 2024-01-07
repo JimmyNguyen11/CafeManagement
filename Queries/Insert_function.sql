@@ -1,4 +1,5 @@
 -- Insert branch
+DROP FUNCTION IF EXISTS insert_branch_info;
 CREATE OR REPLACE FUNCTION insert_branch_info(p_branch_id text, p_address text, p_contact_num text, p_manager_id int)
 RETURNS void AS $$
 BEGIN
@@ -12,6 +13,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --  Insert job
+DROP FUNCTION IF EXISTS insert_job_info;
 CREATE OR REPLACE FUNCTION insert_job_info(p_job_id text, p_job_title text, p_salary_per_hour numeric, p_fixed_salary numeric)
 RETURNS void AS $$
 BEGIN
@@ -25,6 +27,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Insert menu
+DROP FUNCTION IF EXISTS insert_menu_info;
 CREATE OR REPLACE FUNCTION insert_menu_info(p_item_id text, p_item_name text, p_price numeric)
 RETURNS void AS $$
 BEGIN
@@ -38,6 +41,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Insert customer
+DROP FUNCTION IF EXISTS insert_customer_info;
 CREATE OR REPLACE FUNCTION insert_customer_info(p_customer_name text, p_address text, p_contact_num text, p_gender text)
 RETURNS void AS $$
 DECLARE
@@ -54,6 +58,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Insert staff
+DROP FUNCTION IF EXISTS insert_staff_info;
 CREATE OR REPLACE FUNCTION insert_staff_info(
     p_job_id text,
     p_first_name text,
@@ -101,6 +106,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Insert order
+DROP FUNCTION IF EXISTS insert_order_info;
 CREATE OR REPLACE FUNCTION insert_order_info(
 	p_order_id text,
     p_staff_id text,
@@ -135,6 +141,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Insert order item
+DROP FUNCTION IF EXISTS insert_order_item_info;
 CREATE OR REPLACE FUNCTION insert_order_item_info(
     p_order_id text,
     p_item_id text,
