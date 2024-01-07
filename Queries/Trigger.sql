@@ -85,7 +85,7 @@ BEFORE INSERT OR UPDATE ON cm_order
 FOR EACH ROW EXECUTE FUNCTION apply_returning_discount();
 --test
 
---5. trigger cascade Delete for Order Items
+--5. Trigger cascade Delete for Order Items
 --trigger function
 CREATE OR REPLACE FUNCTION cascade_delete_order_items()
 RETURNS TRIGGER AS $$
@@ -100,3 +100,20 @@ AFTER DELETE ON cm_order
 FOR EACH ROW EXECUTE FUNCTION cascade_delete_order_items();
 --test
 
+--6. Trigger to validate_taken_staff for the order
+--trigger function
+CREATE OR REPLACE FUNCTION validate_taken_staff()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (SELECT * FROM cm_staff WHERE staff_id = NEW.staff_id AND status = 'inactive') THEN
+        PERFORM insert_order_info(new.order_id, new.staff_id, new.distance, new.status, new.discount, new.date_order, new.customer_id);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+--attach trigger
+CREATE TRIGGER trigger_validate_taken_staff
+BEFORE INSERT OR UPDATE ON cm_order
+FOR EACH ROW EXECUTE FUNCTION validate_taken_staff();
