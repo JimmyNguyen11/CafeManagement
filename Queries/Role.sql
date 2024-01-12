@@ -8,6 +8,7 @@ GRANT CONNECT ON DATABASE cafe_management TO customer;
 GRANT USAGE ON SCHEMA public TO customer;
 
 GRANT SELECT ON TABLE cm_menu TO customer;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE cm_customer TO customer;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE cm_order TO customer;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE cm_order_item TO customer;
 ALTER ROLE customer WITH LOGIN;
@@ -27,23 +28,27 @@ ALTER ROLE normal_staff WITH LOGIN;
 CREATE ROLE manager_branch;
 GRANT CONNECT ON DATABASE cafe_management TO manager_branch;
 GRANT USAGE ON SCHEMA public TO manager_branch;
-
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO manager_branch;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO manager_branch;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO manager_branch;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE cm_customer TO manager_branch;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE cm_order TO manager_branch;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE cm_order_item TO manager_branch;
-GRANT SELECT, INSERT, UPDATE ON TABLE cm_staff TO manager_branch;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE cm_staff TO manager_branch;
+
 ALTER ROLE manager_branch WITH LOGIN;
 
 -- 4. Role admin_system.
 CREATE ROLE admin_system;
 GRANT CONNECT ON DATABASE cafe_management TO admin_system;
-GRANT ALL ON SCHEMA public TO admin_system;
+alter role admin_system with superuser;
 
+GRANT ALL ON SCHEMA public TO admin_system;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_system;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO admin_system;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO admin_system;
+alter default privileges in schema public grant all on tables to admin_system;  
+alter default privileges in schema public grant all on sequences to admin_system;  
+alter default privileges in schema public grant all on functions to admin_system;  
 ALTER ROLE admin_system WITH LOGIN;
 
 -- Create Users
